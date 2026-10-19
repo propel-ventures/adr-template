@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{Title}</title>
+<style>
+  /* Layout: one centred reading column. Wide tables break out of it: the options grid runs
+     full width at its full height, and scrolls sideways in its own box with the Aspect column pinned. Neutral palette. */
+  :root {
+    color-scheme: light;
+    --accent: #2f6f8f;
+    --bg: #f7f8fa; --surface: #ffffff; --text-strong: #1b2430; --text: #2e3a48; --muted: #646f7c;
+    --line: #d9dee5; --head: #eef1f5; --link: #1f6391; --link-visited: #6a4a9c; --focus: #2a8fbd;
+    --quote-bg: #eef3f7;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --prose: 46rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --accent: #5fa8cc;
+      --bg: #121417; --surface: #1a1d22; --text-strong: #eef1f5; --text: #cdd3db; --muted: #98a2ae;
+      --line: #2d333b; --head: #22262d; --link: #8cc4ef; --link-visited: #c6a8f0; --focus: #4fb3e0;
+      --quote-bg: #1e252d;
+    }
+  }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 var(--sans); }
+  .adr { display: grid; grid-template-columns: minmax(0, 1fr) min(var(--prose), 100%) minmax(0, 1fr);
+         padding-block: 40px 72px; padding-inline: clamp(16px, 4vw, 40px); }
+  .adr > * { grid-column: 2; min-width: 0; }
+  h1, h2, h3 { color: var(--text-strong); text-wrap: balance; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .6em; }
+  h2 { font-size: 1.4rem; line-height: 1.3; margin: 1.8em 0 .7em; padding-bottom: .35em; border-bottom: 1px solid var(--line); }
+  h3 { font-size: 1.1rem; margin: 1.6em 0 .5em; }
+  p { margin: 0 0 1em; }
+  ol, ul { margin: 0 0 1em; padding-left: 1.6em; }
+  li { margin: .35em 0; }
+  a { color: var(--link); }
+  a:visited { color: var(--link-visited); }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  blockquote { box-sizing: border-box; margin: 1.2em 0; padding: .7em 1.1em; background: var(--quote-bg);
+               border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; }
+  blockquote p { margin: 0; }
+  code { font: .85em var(--mono); }
+  strong { color: var(--text-strong); }
+
+  /* Tables. Every table sits in its own scroll box, so the page never scrolls sideways. */
+  .table-wrap { justify-self: start; max-width: 100%; overflow: auto; border: 1px solid var(--line); background: var(--surface); margin: 0 0 1.4em; }
+  table { border-collapse: separate; border-spacing: 0; font-size: 15px; line-height: 1.55; font-variant-numeric: tabular-nums; }
+  th, td { border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+           padding: 10px 12px; vertical-align: top; text-align: left; background: var(--surface); }
+  th { background: var(--head); color: var(--text-strong); }
+  /* The options grid: full height, with the first column pinned when it scrolls sideways. */
+  /* Tables with three or more columns get the page width, centred. */
+  .adr > .table-wrap:not(.options):has(th:nth-child(3)) { grid-column: 1 / -1; justify-self: center; max-width: min(100%, 96rem); }
+  .adr > .table-wrap.options { grid-column: 1 / -1; justify-self: stretch; }
+  .options table { width: max-content; }
+  .options th, .options td { min-width: 280px; max-width: 360px; }
+  .options th:first-child, .options td:first-child { width: 170px; min-width: 170px; max-width: 170px; position: sticky; left: 0; z-index: 1; background: var(--head); }
+  .options thead th { position: sticky; top: 0; z-index: 2; }
+  .options thead th:first-child { z-index: 3; }
+  /* Narrow tables (two columns) read as a list. */
+  table.small th, table.small td { max-width: 620px; }
+  table.small td:first-child { white-space: nowrap; }
+
+  /* Column controls on the options grid. */
+  .ign { display: block; margin-bottom: 6px; font-weight: normal; font-size: 12px; color: var(--muted); cursor: pointer; }
+  th.ignored, td.ignored { min-width: 0; width: 34px; max-width: 34px; padding: 10px 4px; opacity: .5; }
+  td.ignored { color: transparent; overflow: hidden; white-space: nowrap; }
+  td.ignored * { visibility: hidden; }
+  th.ignored { writing-mode: vertical-rl; white-space: nowrap; }
+  th.ignored .ign { writing-mode: horizontal-tb; margin: 0 0 8px; }
+  th.ignored .ign span { display: none; }
+  .ign-bar { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 0 0 16px; font-size: 14px; }
+  .ign-all { cursor: pointer; }
+  .ign-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 1.4em 0 10px; font-size: 14px; }
+  .ign-tools button { font: inherit; padding: 3px 10px; cursor: pointer; color: var(--text-strong); background: var(--surface);
+                      border: 1px solid var(--line); border-radius: 4px; }
+  .ign-tools input[type=number] { width: 3.5em; font: inherit; }
+  .ign-hint { flex-basis: 100%; color: var(--muted); font-size: 12px; }
+  .score { margin-top: 4px; font-size: 12px; font-weight: normal; color: var(--muted); }
+  th.ignored .score { display: none; }
+</style>
+</head>
+<body>
+<main class="adr">
+<!-- readme:head:start -->
+<!-- readme:head:end -->
+<!-- options:start -->
+<h2 id="options">Options</h2>
+<p>{One line on the options table: what the columns are, the date of the figures, and the currency.}</p>
+<script type="application/json" id="options-config">
+{
+  "filters": [
+    { "row": "{Criterion row name}", "mark": "🔴", "label": "{fail on that criterion}" }
+  ],
+  "tieBreak": ["{Criterion row name}"]
+}
+</script>
+<div class="table-wrap options"><table>
+<thead>
+<tr><th>Aspect</th><th>1. {Option}</th><th>2. {Option}</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Description</strong></td><td>• <strong>Content:</strong> {where the content lives}<br>• <strong>Source:</strong> {links}</td><td>…</td></tr>
+<tr><td><strong>1. {Criterion}</strong></td><td>🟢 <strong>Pass</strong><br>• {evidence}</td><td>🔴 <strong>Fail</strong><br>• {evidence}</td></tr>
+</tbody>
+</table></div>
+<!-- options:end -->
+<!-- readme:tail:start -->
+<!-- readme:tail:end -->
+</main>
+<script>
+// Options grid controls. A column is ignored when it is ticked by hand, or when a ticked filter
+// matches it. Filters and tie-break rows come from the #options-config JSON in the options block.
+// Each verdict cell starts with 🟢, 🟡 or 🔴, which also drives the score.
+(function () {
+  function store(key, val) {
+    try {
+      if (val === undefined) return localStorage.getItem(key) === '1';
+      localStorage.setItem(key, val ? '1' : '');
+    } catch (e) { return false; }
+  }
+  var config = { filters: [], tieBreak: [], defaultBest: 0 };
+  try { config = Object.assign(config, JSON.parse(document.getElementById('options-config').textContent)); } catch (e) {}
+  var colName = function (el) { return el.textContent.trim().replace(/^\d+\.\s*/, ''); };
+  var prefix = location.pathname.replace(/[^a-z0-9]+/gi, '-') + ':';
+  // Until the viewer changes the view, defaultBest (when set) shows only the best N options on load.
+  var touch = function () { store(prefix + 'touched', true); };
+
+  document.querySelectorAll('table').forEach(function (table) {
+    if (table.querySelectorAll('thead th').length <= 2) table.classList.add('small');
+  });
+
+  var table = document.querySelector('.table-wrap.options table');
+  if (!table) return;
+  var wrap = table.parentNode;
+  var cols = Array.prototype.slice.call(table.querySelectorAll('thead th')).slice(1).map(function (th, n) {
+    var col = { i: n + 1, th: th, key: prefix + 'ignore:' + colName(th) };
+    var label = document.createElement('label');
+    label.className = 'ign';
+    label.innerHTML = '<input type="checkbox" id="ign-' + (n + 1) + '"> <span>Ignore</span>';
+    th.insertBefore(label, th.firstChild);
+    col.box = label.querySelector('input');
+    col.manual = store(col.key);
+    col.box.addEventListener('change', function () { touch(); col.manual = col.box.checked; store(col.key, col.manual); render(); });
+    return col;
+  });
+  var rows = {};
+  table.querySelectorAll('tbody tr').forEach(function (tr) { rows[colName(tr.children[0])] = tr; });
+
+  var bar = document.createElement('div');
+  bar.className = 'ign-bar';
+  wrap.parentNode.insertBefore(bar, wrap);
+  var filters = config.filters.filter(function (f) { return rows[f.row]; }).map(function (f, n) {
+    var tr = rows[f.row];
+    var hit = cols.filter(function (c) { return tr.children[c.i] && tr.children[c.i].textContent.indexOf(f.mark) !== -1; });
+    var label = document.createElement('label');
+    label.className = 'ign-all';
+    label.innerHTML = '<input type="checkbox" id="flt-' + n + '"> Ignore options that ' + f.label + ' (' + hit.length + ')';
+    bar.appendChild(label);
+    var flt = { f: f, hit: hit, box: label.querySelector('input'), key: prefix + 'filter:' + f.row };
+    flt.box.checked = store(flt.key);
+    flt.box.addEventListener('change', function () { touch(); store(flt.key, flt.box.checked); render(); });
+    return flt;
+  });
+  function heldBy(c) {
+    return filters.filter(function (x) { return x.box.checked && x.hit.indexOf(c) !== -1; }).map(function (x) { return x.f.label; });
+  }
+  function setManual(c, v) { c.manual = v; store(c.key, v); }
+  function render() {
+    cols.forEach(function (c) {
+      var by = heldBy(c);
+      var ignored = c.manual || by.length > 0;
+      c.box.checked = ignored;
+      c.box.disabled = by.length > 0;
+      c.box.parentNode.title = by.length ? 'Ignored by filter: ' + by.join(', ') : '';
+      table.querySelectorAll('tr').forEach(function (tr) {
+        if (tr.children[c.i]) tr.children[c.i].classList.toggle('ignored', ignored);
+      });
+    });
+  }
+
+  // Score each option from its verdicts, and offer Ignore all, Show all and Show best N.
+  var POINTS = { '🟢': 2, '🟡': 1, '🔴': 0 };
+  var verdict = function (r, c) {
+    var cell = rows[r] && rows[r].children[c.i];
+    var m = cell && cell.textContent.trim().match(/^(🟢|🟡|🔴)/);
+    return m ? POINTS[m[1]] : 0;
+  };
+  var scored = Object.keys(rows).filter(function (r) {
+    return cols.some(function (c) { var cell = rows[r].children[c.i]; return cell && /^(🟢|🟡|🔴)/.test(cell.textContent.trim()); });
+  });
+  if (scored.length) {
+    cols.forEach(function (c) {
+      c.score = scored.reduce(function (sum, r) { return sum + verdict(r, c); }, 0);
+      c.tie = config.tieBreak.map(function (r) { return verdict(r, c); });
+      var tag = document.createElement('div');
+      tag.className = 'score';
+      tag.textContent = 'Score ' + c.score + ' / ' + scored.length * 2;
+      c.th.appendChild(tag);
+    });
+    var tools = document.createElement('div');
+    tools.className = 'ign-tools';
+    tools.innerHTML = '<button type="button" data-a="all">Ignore all</button>' +
+      '<button type="button" data-a="none">Show all</button>' +
+      '<button type="button" data-a="best">Show best</button>' +
+      '<input type="number" id="best-n" min="1" max="' + cols.length + '" aria-label="How many options"> options' +
+      '<span class="ign-hint">Best ranks the options not hidden by a ticked filter by their verdicts across all ' + scored.length +
+      ' criteria (green 2, yellow 1, red 0).' + (config.tieBreak.length ? ' Ties go to ' + config.tieBreak.join(', then ') + ', then table order.' : ' Ties go to table order.') + '</span>';
+    wrap.parentNode.insertBefore(tools, bar);
+    var nBox = tools.querySelector('input');
+    var saved = 0;
+    try { saved = parseInt(localStorage.getItem(prefix + 'best-n'), 10) || 0; } catch (e) {}
+    nBox.value = saved || 4;
+    var best = function () {
+      var n = Math.max(1, Math.min(cols.length, parseInt(nBox.value, 10) || 4));
+      nBox.value = n;
+      try { localStorage.setItem(prefix + 'best-n', String(n)); } catch (e) {}
+      var ranked = cols.filter(function (c) { return heldBy(c).length === 0; }).slice().sort(function (a, b) {
+        if (b.score !== a.score) return b.score - a.score;
+        for (var k = 0; k < a.tie.length; k++) if (b.tie[k] !== a.tie[k]) return b.tie[k] - a.tie[k];
+        return a.i - b.i;
+      });
+      var top = ranked.slice(0, n);
+      cols.forEach(function (c) { setManual(c, top.indexOf(c) === -1); });
+      render();
+    };
+    tools.addEventListener('click', function (e) {
+      var a = e.target.getAttribute && e.target.getAttribute('data-a');
+      if (a) touch();
+      if (a === 'all') { cols.forEach(function (c) { setManual(c, true); }); render(); }
+      if (a === 'none') {
+        cols.forEach(function (c) { setManual(c, false); });
+        filters.forEach(function (x) { x.box.checked = false; store(x.key, false); });
+        render();
+      }
+      if (a === 'best') best();
+    });
+    nBox.addEventListener('change', function () { touch(); best(); });
+    if (config.defaultBest > 0 && !store(prefix + 'touched')) { nBox.value = config.defaultBest; best(); }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
